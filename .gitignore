@@ -22,26 +22,6 @@ binaries/
 .springBeans
 .sts4-cache
 
-## IntelliJ IDEA
-.idea/
-*.iws
-*.iml
-*.ipr
-
-## NetBeans
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-## VS Code
-.vscode/
-
-## Outros
-*.sublime-workspace
-*.sublime-project
-
 # Arquivos de configuração de ferramentas
 ## Maven
 *.log
