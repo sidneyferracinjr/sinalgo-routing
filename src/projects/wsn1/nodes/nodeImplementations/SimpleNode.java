@@ -1,11 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package projects.wsn1.nodes.nodeImplementations;
-
-import java.awt.Color;
 
 import projects.wsn1.nodes.messages.WsnMsg;
 import projects.wsn1.nodes.timers.WsnMessageTimer;
@@ -13,43 +6,41 @@ import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.nodes.Node;
 import sinalgo.nodes.messages.Inbox;
 import sinalgo.nodes.messages.Message;
+import sinalgo.runtime.Global;
 
 public class SimpleNode extends Node {
 
-    //Armazenar o no que sera usado para alcancar a Estacao-Base
     private Node proximoNoAteEstacaoBase;
-    
-    //Armazena o numero de sequencia da ultima mensagem recebida
     private Integer sequenceNumber = 0;
+    private boolean isSinkNode = false;
 
     @Override
     public void handleMessages(Inbox inbox) {
         while (inbox.hasNext()) {
             Message message = inbox.next();
             if (message instanceof WsnMsg) {
-                Boolean encaminhar = Boolean.TRUE;
-                WsnMsg wsnMessage = (WsnMsg) message;                
-                if (wsnMessage.forwardingHop.equals(this)) { // A mensagem voltou. O no deve descarta-la
-                    encaminhar = Boolean.FALSE;
-                } else if (wsnMessage.tipoMsg == 0) { // A mensagem e um flood. Devemos atualizar a rota
-                    if (proximoNoAteEstacaoBase == null) {
+                WsnMsg wsnMessage = (WsnMsg) message;
+                boolean encaminhar = true;
+
+                if (wsnMessage.forwardingHop.equals(this)) {
+                    encaminhar = false;  // Evitar loop
+                } else if (wsnMessage.tipoMsg == 0) {  // Mensagem de Roteamento
+                    if (proximoNoAteEstacaoBase == null || sequenceNumber < wsnMessage.sequenceID) {
                         proximoNoAteEstacaoBase = inbox.getSender();
                         sequenceNumber = wsnMessage.sequenceID;
-                    } else if (sequenceNumber < wsnMessage.sequenceID) {
-                    //Recurso simples para evitar loop.
-                        //Exemplo: Noh A transmite em brodcast. Noh B recebe a
-                        //msg e retransmite em broadcast.
-                        //Consequentemente, noh A ira receber a msg. Sem esse
-                        //condicional, noh A iria retransmitir novamente, gerando um loop
-                        sequenceNumber = wsnMessage.sequenceID;
                     } else {
-                        encaminhar = Boolean.FALSE;
+                        encaminhar = false;
+                    }
+                } else if (wsnMessage.tipoMsg == 1) {  // Mensagem de Dados
+                    if (isSinkNode) {
+                        System.out.println("SinkNode " + this.ID + " recebeu dados de " + inbox.getSender().ID);
+                        encaminhar = false;  // No Sink, não encaminha mensagens de dados
+                    } else {
+                        System.out.println(this.ID + " recebeu dados de " + wsnMessage.origem.ID);
                     }
                 }
+
                 if (encaminhar) {
-                    //Devemos alterar o campo forwardingHop(da mensagem) para armazenar o
-                	//noh que vai encaminhar a mensagem.
-                	System.out.println(this.ID+" recebe dados de "+wsnMessage.origem.ID);
                     wsnMessage.forwardingHop = this;
                     broadcast(wsnMessage);
                 }
@@ -59,36 +50,33 @@ public class SimpleNode extends Node {
 
     @Override
     public void preStep() {
-       // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (isSinkNode && Global.currentTime == 1) {  // Mudança aqui
+            construirRoteamento();
+        } else if (proximoNoAteEstacaoBase != null) {
+            // Enviar mensagem de dados
+            WsnMsg dataMsg = new WsnMsg(sequenceNumber + 1, this, null, this, 1);
+            send(dataMsg, proximoNoAteEstacaoBase);
+        }
     }
 
     @NodePopupMethod(menuText = "Construir Arvore de Roteamento")
     public void construirRoteamento() {
-        this.proximoNoAteEstacaoBase = this;
+        isSinkNode = true;
+        proximoNoAteEstacaoBase = this;
         WsnMsg wsnMessage = new WsnMsg(1, this, null, this, 0);
         WsnMessageTimer timer = new WsnMessageTimer(wsnMessage);
         timer.startRelative(1, this);
     }
 
     @Override
-    public void init() {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    
-    }
+    public void init() {}
 
     @Override
-    public void neighborhoodChange() {
-       // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+    public void neighborhoodChange() {}
 
     @Override
-    public void postStep() {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+    public void postStep() {}
 
     @Override
-    public void checkRequirements() throws WrongConfigurationException {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
+    public void checkRequirements() throws WrongConfigurationException {}
 }
