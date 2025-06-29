@@ -40,4 +40,4 @@ O arquivo de configuração `wsn1_config.xml` foi ajustado para garantir que os 
 ## Conclusão
 O projeto foi implementado com sucesso, permitindo que o nó Sink crie rotas para todos os nós da rede e que os sensores enviem pacotes de dados ao Sink sem loops ou erros de roteamento. A simulação no Sinalgo demonstrou que as funcionalidades foram implementadas de forma eficaz.
 
-### Aluno: Sidney Alexandre Ferracin Junior - 2348160
+### Aluno: Sidney Alexandre Ferracin Júnior - 2348160
